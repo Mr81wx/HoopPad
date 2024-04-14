@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from Model.utils import *
+from ..Model.utils import *
 
 from collections import OrderedDict
 

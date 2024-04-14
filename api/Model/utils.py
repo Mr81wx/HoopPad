@@ -2,7 +2,7 @@ import math
 from torch.distributions.laplace import Laplace
 import torch
 import torch.nn as nn
-from visualizer import get_local
+from ..Visualizer.visualizer import get_local
 import functools
 import numpy as np
 class View(nn.Module):

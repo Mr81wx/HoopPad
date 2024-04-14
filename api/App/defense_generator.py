@@ -7,9 +7,11 @@ from ..Model.module_all import HoopTransformer
 from ..Model.motion_module import *
 from ..Model.decoder import *
 from ..Model.possession import *
+import sys
 
 def load_possession(possession_path):
     with open(possession_path, 'rb') as f:
+        print(f)
         possession = pickle.load(f)
     states_batch, agents_batch_mask, states_padding_batch, states_hidden_batch,num_agents_accum,agent_ids_batch,team_ids_batch,labels_batch = create_def([possession])
 

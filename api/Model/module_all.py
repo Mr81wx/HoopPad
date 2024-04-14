@@ -3,7 +3,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 import torch.functional as FU
 from pytorch_lightning.loggers import TensorBoardLogger
-from Model.utils import laplace_kl, NTXentLoss
+from ..Model.utils import laplace_kl, NTXentLoss
 from torch.distributions.laplace import Laplace
 from torch.optim.lr_scheduler import OneCycleLR
 
@@ -17,8 +17,8 @@ import pytorch_lightning as pl
 
 #sys.path.append('/home/user/daehee/SceneTransformer-pytorch')
 
-from Model.encoder import Encoder
-from Model.decoder import Decoder_MR, Decoder_CL, Decoder_DT
+from ..Model.encoder import Encoder
+from ..Model.decoder import Decoder_MR, Decoder_CL, Decoder_DT
 #from datautil.waymo_dataset import xy_to_pixel
 
 #COLORS = [(0,0,255), (255,0,255), (180,180,0), (143,143,188), (0,100,0), (128,128,0)]

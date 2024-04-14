@@ -15,7 +15,7 @@ import numpy as np
 import copy
 #import hydra
 import pytorch_lightning as pl
-from Model.utils import *
+from ..Model.utils import *
 
 
 
