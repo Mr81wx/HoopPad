@@ -15,9 +15,8 @@ def load_possession(possession_path):
 
     return states_batch, agents_batch_mask, states_padding_batch, states_hidden_batch,num_agents_accum,agent_ids_batch,team_ids_batch,labels_batch
 
-# input real off_players + ball trajectories and particial def_players trajectory (first 1s)
-def def_gen(ckp_path,
-states_batch, agents_batch_mask, states_padding_batch, states_hidden_batch,agent_ids_batch,team_ids_batch):
+
+def load_model(ckp_path):
     #load Model
     Scene_model = HoopTransformer(3,121,256,4,4,6,50,0.1,32,5e-5,[1])
     base_model = test_model_motion(Scene_model,freeze=True, num_unfreeze = 0) #Encoder freeze
@@ -25,13 +24,19 @@ states_batch, agents_batch_mask, states_padding_batch, states_hidden_batch,agent
     checkpoint = torch.load(ckp_path, map_location=lambda storage, loc: storage)
     Test_model.load_state_dict(checkpoint['state_dict'])
 
-    Test_model.to('cpu')
-    Test_model.eval()
+    return Test_model
+
+# input real off_players + ball trajectories and particial def_players trajectory (first 1s)
+def def_gen(model,
+states_batch, agents_batch_mask, states_padding_batch, states_hidden_batch,agent_ids_batch,team_ids_batch):
+    
+    model.to('cpu')
+    model.eval()
 
     #get_local.clear() for attention map
 
     with torch.no_grad():
-        out = Test_model(states_batch, agents_batch_mask, states_padding_batch, states_hidden_batch,agent_ids_batch,team_ids_batch)
+        out = model(states_batch, agents_batch_mask, states_padding_batch, states_hidden_batch,agent_ids_batch,team_ids_batch)
         # out [A,T,4] 第0个和第2个是x,y
     ghost_trajectory = out[:,:,0,::2] #[A,T,F]
 
@@ -43,4 +48,7 @@ if __name__ == "__main__":
     states_batch, agents_batch_mask, states_padding_batch, states_hidden_batch,agent_ids_batch,team_ids_batch = load_possession(possession_path)
     
     ckp_path = 'api/Checkpoints/V3_prompt+def_loss.ckpt'
-    real_T,ghost_T = def_gen(ckp_path,states_batch, agents_batch_mask, states_padding_batch, states_hidden_batch,agent_ids_batch,team_ids_batch)
+    model = load_model(ckp_path)
+    
+   
+    real_T,ghost_T = def_gen(model,states_batch, agents_batch_mask, states_padding_batch, states_hidden_batch,agent_ids_batch,team_ids_batch)
