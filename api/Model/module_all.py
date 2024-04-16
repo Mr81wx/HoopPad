@@ -15,7 +15,6 @@ import copy
 #import hydra
 import pytorch_lightning as pl
 
-#sys.path.append('/home/user/daehee/SceneTransformer-pytorch')
 
 from ..Model.encoder import Encoder
 from ..Model.decoder import Decoder_MR, Decoder_CL, Decoder_DT
