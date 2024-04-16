@@ -3,7 +3,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 import torch.functional as FU
 from pytorch_lightning.loggers import TensorBoardLogger
-from ..Model.utils import laplace_kl, NTXentLoss
+from .utils import laplace_kl, NTXentLoss
 from torch.distributions.laplace import Laplace
 from torch.optim.lr_scheduler import OneCycleLR
 
@@ -16,8 +16,8 @@ import copy
 import pytorch_lightning as pl
 
 
-from ..Model.encoder import Encoder
-from ..Model.decoder import Decoder_MR, Decoder_CL, Decoder_DT
+from .encoder import Encoder
+from .decoder import Decoder_MR, Decoder_CL, Decoder_DT
 #from datautil.waymo_dataset import xy_to_pixel
 
 #COLORS = [(0,0,255), (255,0,255), (180,180,0), (143,143,188), (0,100,0), (128,128,0)]

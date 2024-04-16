@@ -2,7 +2,7 @@ import math
 from torch.distributions.laplace import Laplace
 import torch
 import torch.nn as nn
-from ..Visualizer.visualizer import get_local
+#from ..Visualizer.visualizer import get_local
 import functools
 import numpy as np
 class View(nn.Module):
@@ -51,7 +51,7 @@ class SelfAttLayer_Enc(nn.Module):
         #self.layer_F2_ = nn.Sequential(nn.Linear(k*feature_dim,feature_dim), nn.ReLU())
         self.layer_Z_ = nn.LayerNorm(feature_dim)
          
-    @get_local('attention_map')
+    #@get_local('attention_map')
     def forward(self, x, batch_mask, padding_mask=None, hidden_mask=None):
         #print(hidden_mask)
         A,T,D = x.shape
@@ -112,7 +112,7 @@ class SelfAttLayer_Dec(nn.Module):
         #self.layer_F2_ = nn.Sequential(nn.Linear(k*feature_dim,feature_dim), nn.ReLU())
         self.layer_Z_ = nn.LayerNorm(feature_dim)
     
-    @get_local('attention_map')
+    #@get_local('attention_map')
     def forward(self, x, batch_mask, padding_mask=None, hidden_mask=None):
         F,A,T,D = x.shape
         assert (T==self.time_steps and D==self.feature_dim)
@@ -219,8 +219,8 @@ class NTXentLoss(torch.nn.Module):
         super(NTXentLoss, self).__init__()
         self.batch_size = batch_size
         self.temperature = temperature
-        # self.device = device
-        self.device = 'cuda:' + str(torch.cuda.current_device())
+        self.device = device
+        #self.device = 'cuda:' + str(torch.cuda.current_device())
         self.softmax = torch.nn.Softmax(dim=-1)
         # self.mask_samples_from_same_repr = self._get_correlated_mask().type(torch.bool)
         self.similarity_function = self._get_similarity_function(use_cosine_similarity)
