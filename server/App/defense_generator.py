@@ -47,13 +47,25 @@ states_batch, agents_batch_mask, states_padding_batch, states_hidden_batch,agent
     return states_batch, ghost_trajectory
 
 
-if __name__ == "__main__":
-    possession_path = '/workspaces/HoopPad/api/Data/object_0.pkl'
+
+
+
+def get_results(possession_path, ckp_path):
     states_batch, agents_batch_mask, states_padding_batch, states_hidden_batch,num_agents_accum,agent_ids_batch,team_ids_batch,labels_batch = load_possession(possession_path)
-    
-    ckp_path = '/workspaces/HoopPad/api/Checkpoints/V3_prompt+def_loss.ckpt'
     model = load_model(ckp_path)
+    real_T,ghost_T = def_gen(model,states_batch, agents_batch_mask, states_padding_batch, states_hidden_batch,agent_ids_batch,team_ids_batch)
+
+    return ghost_T
+
+
+
+# if __name__ == "__main__":
+#     possession_path = '/Users/yufu/Documents/Code/HoopPad/server/Data/object_0.pkl'
+#     states_batch, agents_batch_mask, states_padding_batch, states_hidden_batch,num_agents_accum,agent_ids_batch,team_ids_batch,labels_batch = load_possession(possession_path)
+    
+#     ckp_path = '/Users/yufu/Documents/Code/HoopPad/server/Checkpoints/V3_prompt+def_loss.ckpt'
+#     model = load_model(ckp_path)
     
    
-    real_T,ghost_T = def_gen(model,states_batch, agents_batch_mask, states_padding_batch, states_hidden_batch,agent_ids_batch,team_ids_batch)
-    print(ghost_T)
+#     real_T,ghost_T = def_gen(model,states_batch, agents_batch_mask, states_padding_batch, states_hidden_batch,agent_ids_batch,team_ids_batch)
+#     print(ghost_T)
