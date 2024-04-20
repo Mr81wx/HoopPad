@@ -16,6 +16,7 @@ import {
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import axios from "axios";
 import { BasketballCourt } from "./components/BasketballCourt";
+import { DrawPlayers } from "./components/DrawPlayers";
 
 function App() {
   const [count, setCount] = useState(0);
@@ -24,20 +25,24 @@ function App() {
   const [selectedDataFile, setSelectedDataFile] = useState("");
   const [selectedCheckpoint, setSelectedCheckpoint] = useState("");
 
+  const [playerData, setPlayerData] = useState([]);
+
   const fetchAPI = async () => {
     // const response = await axios.get("http://localhost:8080/api/ghostT");
 
     try {
       const dataResponse = await axios.get("http://localhost:8080/select_data");
-      console.log(dataResponse.data);
-      setDataFiles(dataResponse.data);
+      setDataFiles(
+        dataResponse.data.sort((a, b) => a.label.localeCompare(b.label))
+      );
 
-      // Fetch checkpoint files
       const checkpointResponse = await axios.get(
         "http://localhost:8080/select_checkpoints"
       );
       console.log(checkpointResponse.data);
-      setCheckpointFiles(checkpointResponse.data);
+      setCheckpointFiles(
+        checkpointResponse.data.sort((a, b) => a.label.localeCompare(b.label))
+      );
     } catch (error) {
       console.error("Error fetching data:", error);
     }
@@ -48,12 +53,14 @@ function App() {
       const response = await axios.get(`http://localhost:8080/api/ghostT`, {
         params: {
           dataFile: selectedDataFile,
-          checkpointFile: selectedCheckpoint
-        }
+          checkpointFile: selectedCheckpoint,
+        },
       });
-      console.log("Response:", response.data);
+      console.log("Response:", response.data.ghost_T);
+
+      setPlayerData(response.data.ghost_T.data);
     } catch (error) {
-      console.error('Error submitting selections:', error);
+      console.error("Error submitting selections:", error);
     }
   };
 
@@ -135,6 +142,9 @@ function App() {
           <div className="card">
             <svg width="800" height="450" viewBox="0 0 800 450">
               <BasketballCourt width={800} />
+              {playerData.length > 0 && (
+                <DrawPlayers width={800} playerData={playerData} />
+              )}
             </svg>
           </div>
         </ThemeProvider>

@@ -5,6 +5,8 @@ from App.defense_generator import *
 import json
 import numpy as np
 from numpyencoder import NumpyEncoder
+import logging
+
 
 DATA_DIR = '/Users/yufu/Documents/Code/HoopPad/server/Data'
 CHECKPOINTS_DIR = '/Users/yufu/Documents/Code/HoopPad/server/Checkpoints'
@@ -27,21 +29,23 @@ def select_checkpoints():
 
 @app.route('/api/ghostT')
 def ghostT():
-    # possession_path = '/Users/yufu/Documents/Code/HoopPad/server/Data/object_0.pkl'
-    # ckp_path = '/Users/yufu/Documents/Code/HoopPad/server/Checkpoints/V3_prompt+def_loss.ckpt'
-
     data_file = request.args.get('dataFile')
     checkpoint_file = request.args.get('checkpointFile')
+
+    if not data_file or not checkpoint_file:
+        logging.error("Required file parameters are missing.")
+        return jsonify({'error': 'Missing required parameters'}), 400
 
     possession_path = os.path.join('/Users/yufu/Documents/Code/HoopPad/server/Data', data_file)
     ckp_path = os.path.join('/Users/yufu/Documents/Code/HoopPad/server/Checkpoints', checkpoint_file)
 
-    ghost_list = torch.tensor(get_results(possession_path, ckp_path))
-    serialized_tensor = json.dumps(serialize_tensor(ghost_list))
-
-    print(serialized_tensor)
-    
-    return jsonify({'ghost_T': serialized_tensor})
+    try:
+        ghost_list = get_results(possession_path, ckp_path).clone().detach()
+        serialized_tensor = serialize_tensor(ghost_list)
+        return jsonify({'ghost_T': serialized_tensor})
+    except Exception as e:
+        logging.error(f"Failed to process tensor data: {str(e)}")
+        return jsonify({'error': 'Failed to process tensor data'}), 500
     
 
 def serialize_tensor(tensor):
