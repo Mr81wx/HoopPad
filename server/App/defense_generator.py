@@ -13,9 +13,9 @@ from Model.possession import *
 def load_possession(possession_path):
     with open(possession_path, 'rb') as f:
         possession = pickle.load(f)
-    states_batch, agents_batch_mask, states_padding_batch, states_hidden_batch,num_agents_accum,agent_ids_batch,team_ids_batch,labels_batch = create_def([possession])
+    states_batch, agents_batch_mask, states_padding_batch, states_hidden_batch,num_agents_accum,agent_ids_batch,team_ids_batch,team_name_batch,labels_batch = create_def([possession])
 
-    return states_batch, agents_batch_mask, states_padding_batch, states_hidden_batch,num_agents_accum,agent_ids_batch,team_ids_batch,labels_batch
+    return states_batch, agents_batch_mask, states_padding_batch, states_hidden_batch,num_agents_accum,agent_ids_batch,team_ids_batch,team_name_batch,labels_batch
 
 
 def load_model(ckp_path):
@@ -43,6 +43,8 @@ states_batch, agents_batch_mask, states_padding_batch, states_hidden_batch,agent
         out = model(states_batch, agents_batch_mask, states_padding_batch, states_hidden_batch,agent_ids_batch,team_ids_batch)
         # out [A,T,4] 第0个和第2个是x,y
     ghost_trajectory = out[:,:,0,::2] #[A,T,F]
+    off_index = torch.where(team_ids_batch != 2)[0]
+    ghost_trajectory[off_index] = states_batch[:,:,:2][off_index]
 
     return states_batch, ghost_trajectory
 
@@ -51,21 +53,32 @@ states_batch, agents_batch_mask, states_padding_batch, states_hidden_batch,agent
 
 
 def get_results(possession_path, ckp_path):
-    states_batch, agents_batch_mask, states_padding_batch, states_hidden_batch,num_agents_accum,agent_ids_batch,team_ids_batch,labels_batch = load_possession(possession_path)
+    states_batch, agents_batch_mask, states_padding_batch, states_hidden_batch,num_agents_accum,agent_ids_batch,team_ids_batch,team_name_batch,labels_batch = load_possession(possession_path)
     model = load_model(ckp_path)
     real_T,ghost_T = def_gen(model,states_batch, agents_batch_mask, states_padding_batch, states_hidden_batch,agent_ids_batch,team_ids_batch)
+    
+    team_ids_batch = team_ids_batch.numpy().astype(int)
+    agent_ids_batch = agent_ids_batch.numpy().astype(int)
+    players_detail = np.stack((team_ids_batch.astype(int), agent_ids_batch.astype(int), team_name_batch.astype(int)), axis=1)
 
     return ghost_T
 
 
 
 # if __name__ == "__main__":
-#     possession_path = '/Users/yufu/Documents/Code/HoopPad/server/Data/object_0.pkl'
-#     states_batch, agents_batch_mask, states_padding_batch, states_hidden_batch,num_agents_accum,agent_ids_batch,team_ids_batch,labels_batch = load_possession(possession_path)
+#     #possession_path = '/Users/yufu/Documents/Code/HoopPad/server/Data/object_0.pkl'
+#     possession_path = '/workspaces/HoopPad/server/Data/object_0.pkl'
+#     states_batch, agents_batch_mask, states_padding_batch, states_hidden_batch,num_agents_accum,agent_ids_batch,team_ids_batch,team_name_batch,labels_batch = load_possession(possession_path)
     
-#     ckp_path = '/Users/yufu/Documents/Code/HoopPad/server/Checkpoints/V3_prompt+def_loss.ckpt'
+#     #ckp_path = '/Users/yufu/Documents/Code/HoopPad/server/Checkpoints/V3_prompt+def_loss.ckpt'
+#     ckp_path = '/workspaces/HoopPad/server/Checkpoints/V3_prompt+def_loss.ckpt'
 #     model = load_model(ckp_path)
-    
-   
 #     real_T,ghost_T = def_gen(model,states_batch, agents_batch_mask, states_padding_batch, states_hidden_batch,agent_ids_batch,team_ids_batch)
-#     print(ghost_T)
+    
+#     team_ids_batch = team_ids_batch.numpy()
+#     agent_ids_batch = agent_ids_batch.numpy()
+#     players_detail = np.stack((team_ids_batch.astype(int), agent_ids_batch.astype(int), team_name_batch.astype(int)), axis=1)
+#     #print(agent_ids_batch)
+#     np.set_printoptions(suppress=True)
+#     print(players_detail)
+#     #print(ghost_T)

@@ -36,23 +36,25 @@ def create_def(batch): #load possession from each data.pkl
     num_agents = np.array([])
 
     agent_ids_batch = np.array([]) #每一个batch的agent ids, = batch size * 11
-    team_ids_batch = np.array([])
+    team_ids_batch = np.array([]) # 0:ball,1:off,2:def
+    team_name_batch = np.array([]) #original id
 
     #player_newids = pd.read_csv('/content/drive/MyDrive/EPV/DataLoader/players.csv')
     for possession in batch:
         possession_tensor = None
         agent_ids = np.array([])
         team_ids = np.array([])
+        team_name = np.array([])
         for i in range(len(possession.agents)): #间隔sample_freq个取值,一般是5
             agent = possession.agents[i]
             agent_id = agent.playerid  #get_newid(agent.playerid,player_newids)
             agent_ids = np.append(agent_ids,agent_id)
             agent_team = agent.teamid #
-
+            team_name = np.append(team_name,agent_team)
             if agent_team == -1:
                 team_ids= np.append(team_ids,0)
             elif agent_team == possession.off_teamid:
-                team_ids = np.append(team_ids,1)
+                team_ids = np.append(team_ids,1)  
             else:
                 team_ids = np.append(team_ids,2)
 
@@ -76,6 +78,8 @@ def create_def(batch): #load possession from each data.pkl
             possession_tensor = torch.cat([new_dim, possession_tensor], dim=0)
             agent_ids = np.pad(agent_ids, (11 - A, 0), 'constant', constant_values=(-1,))
             team_ids = np.pad(team_ids, (11 - A, 0), 'constant', constant_values=(-1,))
+            team_name = np.pad(team_name, (11 - A, 0), 'constant', constant_values=(-2,))
+
 
 
         possession_tensor = torch.transpose(possession_tensor , dim0=1, dim1=2) #shape[A,T,D]
@@ -91,6 +95,7 @@ def create_def(batch): #load possession from each data.pkl
         states_padding = states_padding < 0 #bool型，[6,121] True为padding，ignore
 
         team_ids_batch = np.append(team_ids_batch,team_ids) # team_classification for task 3 (0-ball,1-off,2-def)
+        team_name_batch = np.append(team_name_batch,team_name)
         def_index = np.where(team_ids_batch == 2)[0]
 
         states_hidden = np.zeros((11,121)).astype(np.bool_) # True 为hidden，这里不需要hidden,all false
@@ -120,4 +125,4 @@ def create_def(batch): #load possession from each data.pkl
     labels_batch = torch.FloatTensor(team_ids_batch) #后面可能会用
 
 
-    return (states_batch, agents_batch_mask, states_padding_batch, states_hidden_batch,num_agents_accum,agent_ids_batch,team_ids_batch,labels_batch)
+    return (states_batch, agents_batch_mask, states_padding_batch, states_hidden_batch,num_agents_accum,agent_ids_batch,team_ids_batch,team_name_batch,labels_batch)
