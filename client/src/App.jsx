@@ -50,19 +50,34 @@ function App() {
 
   const handleSubmit = async () => {
     try {
-      const response = await axios.get(`http://localhost:8080/api/ghostT`, {
+      const response = await axios.get(`http://localhost:8080/api/get_data`, {
         params: {
           dataFile: selectedDataFile,
           checkpointFile: selectedCheckpoint,
         },
       });
-      console.log("Response:", response.data.ghost_T);
-
-      setPlayerData(response.data.ghost_T.data);
+  
+      console.log("All response data:", response.data.agent_IDs);
+  
+      // Assuming data is correctly formatted and the length of arrays are the same
+      const combinedData = response.data.agent_IDs.map((agentId, index) => ({
+        agent_id: agentId,
+        real_T: response.data.real_T.data[index],
+        ghost_T: response.data.ghost_T.data[index],
+        teamID: response.data.player_detail[index][2]  // the third item in each sub-array of player_detail
+      }));
+  
+      console.log("Combined data:", combinedData);
+  
+      // Use this combined data as needed in your application
+      // For example, you might want to set this to the state or pass to another component
+      setPlayerData(combinedData);
+  
     } catch (error) {
       console.error("Error submitting selections:", error);
     }
   };
+  
 
   const theme = createTheme({
     palette: {

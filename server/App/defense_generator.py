@@ -61,7 +61,9 @@ def get_results(possession_path, ckp_path):
     agent_ids_batch = agent_ids_batch.numpy().astype(int)
     players_detail = np.stack((team_ids_batch.astype(int), agent_ids_batch.astype(int), team_name_batch.astype(int)), axis=1)
 
-    return ghost_T
+    print(players_detail)
+
+    return {"real_T": real_T, "ghost_T": ghost_T, "team_IDs": team_ids_batch, "agent_IDs":agent_ids_batch, "player_detail": players_detail}
 
 
 
