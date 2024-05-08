@@ -66,7 +66,15 @@ def get_results(possession_path, ckp_path):
     return {"real_T": real_T, "ghost_T": ghost_T, "team_IDs": team_ids_batch, "agent_IDs":agent_ids_batch, "player_detail": players_detail}
 
 
+def update_prompt(frame_number,player_number,new_x,new_y,states_batch,states_hidden_batch): 
+    #frame_number,player_number_new_x,new_y need to be pass from front
+    # update x,y
+    states_batch[player_number,frame_number,0] = new_x
+    states_batch[player_number,frame_number,0] = new_y
+    #update hidden mask, make this position visible to model
+    states_hidden_batch[palyer_number,frame_number] = False
 
+    return states_batch, states_hidden_batch
 # if __name__ == "__main__":
 #     #possession_path = '/Users/yufu/Documents/Code/HoopPad/server/Data/object_0.pkl'
 #     possession_path = '/workspaces/HoopPad/server/Data/object_0.pkl'
