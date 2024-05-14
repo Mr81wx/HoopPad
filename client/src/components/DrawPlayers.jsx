@@ -1,26 +1,17 @@
 import { useRef, useEffect, useState } from "react";
 import * as d3 from "d3";
 import getTeamColor from "./userTeamColor";
-import basketballSVG from "../assets/basketballSVG.svg";
 import { BasketballCourt } from "./BasketballCourt";
-import {
-  Box,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Button,
-  IconButton,
-} from "@mui/material";
-
+import { Box, IconButton, Tooltip, Button, ButtonGroup } from "@mui/material";
 import PlayCircleOutlineRoundedIcon from "@mui/icons-material/PlayCircleOutlineRounded";
 import PauseCircleOutlineRoundedIcon from "@mui/icons-material/PauseCircleOutlineRounded";
 import RestartAltRoundedIcon from "@mui/icons-material/RestartAltRounded";
 
 export const DrawPlayers = ({ width, playerData }) => {
   const courtSVG = useRef();
-  const [currentStep, setCurrentStep] = useState(1); 
+  const [currentStep, setCurrentStep] = useState(1);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [T_type, setT_type] = useState('real_T'); // Initial trajectory type
 
   // Initialize the players on the court
   useEffect(() => {
@@ -41,10 +32,25 @@ export const DrawPlayers = ({ width, playerData }) => {
       .attr(
         "transform",
         (d) =>
-          `translate(${(d.real_T[1][0] * width) / 94}, ${
-            (d.real_T[1][1] * width) / 94
+          `translate(${(d[T_type][1][0] * width) / 94}, ${
+            (d[T_type][1][1] * width) / 94
           })`
       );
+
+    const drag = d3
+      .drag()
+      .on("start", function (event, d) {
+        d3.select(this).raise();
+      })
+      .on("drag", function (event, d) {
+        d3.select(this).attr("transform", `translate(${event.x}, ${event.y})`);
+      })
+      .on("end", function (event, d) {
+        // Update the position in the data
+        const [newX, newY] = [(event.x * 94) / width, (event.y * 94) / width];
+      });
+
+    groups.call(drag);
 
     groups.each(function (d, i) {
       const group = d3.select(this);
@@ -68,7 +74,7 @@ export const DrawPlayers = ({ width, playerData }) => {
         .attr("r", radius)
         .style("fill", i === 0 ? "orange" : getTeamColor(d.teamID).color)
         .style("stroke-width", 3)
-        .style("stroke", i === 0 ? "orange" : getTeamColor(d.teamID).color)
+        .style("stroke", i === 0 ? "orange" : i > 5 ? "red" : "blue")
         .style("opacity", 0.8);
 
       const image = group
@@ -94,7 +100,7 @@ export const DrawPlayers = ({ width, playerData }) => {
         image.attr("clip-path", `url(#${clipPathId})`);
       }
     });
-  }, [playerData, width]);
+  }, [playerData, width, T_type]);
 
   const svg = d3.select(courtSVG.current);
   const groups = svg.select(".courtGroup").selectAll("g");
@@ -114,20 +120,26 @@ export const DrawPlayers = ({ width, playerData }) => {
             .attr(
               "transform",
               (d) =>
-                `translate(${(d.real_T[index][0] * width) / 94}, ${
-                  (d.real_T[index][1] * width) / 94
+                `translate(${(d[T_type][index][0] * width) / 94}, ${
+                  (d[T_type][index][1] * width) / 94
                 })`
             )
             .end()
             .then(resolve);
         });
         index++;
+
         setCurrentStep(index);
+
+        if (currentStep === 49) {
+          setIsPlaying(false);
+          setCurrentStep(1);
+        }
       }
     }
 
     movePlayersSequentially(currentStep);
-  }, [isPlaying, currentStep, playerData, width]);
+  }, [isPlaying, currentStep, playerData, width, T_type]);
 
   const handlePlayPause = () => {
     groups.interrupt();
@@ -135,9 +147,7 @@ export const DrawPlayers = ({ width, playerData }) => {
   };
 
   const handleRestart = () => {
-    const svg = d3.select(courtSVG.current);
     groups.interrupt();
-
     setIsPlaying(false);
     setCurrentStep(1);
     setIsPlaying(true); // Small delay to ensure UI updates
@@ -146,16 +156,38 @@ export const DrawPlayers = ({ width, playerData }) => {
   return (
     <Box>
       <Box sx={{ mt: 2, display: "flex", justifyContent: "center", gap: 1 }}>
-        <IconButton onClick={handlePlayPause} color="primary">
-          {isPlaying ? (
-            <PauseCircleOutlineRoundedIcon />
-          ) : (
-            <PlayCircleOutlineRoundedIcon />
-          )}
-        </IconButton>
-        <IconButton onClick={handleRestart} color="primary">
-          <RestartAltRoundedIcon />
-        </IconButton>
+        <Tooltip title="Play/Pause">
+          <IconButton onClick={handlePlayPause} color="primary">
+            {isPlaying ? (
+              <PauseCircleOutlineRoundedIcon />
+            ) : (
+              <PlayCircleOutlineRoundedIcon />
+            )}
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Restart">
+          <IconButton onClick={handleRestart} color="primary">
+            <RestartAltRoundedIcon />
+          </IconButton>
+        </Tooltip>
+        <ButtonGroup variant="text" color="primary" aria-label="trajectory type">
+          <Tooltip title="Real Trajectory">
+            <Button 
+              onClick={() => setT_type('real_T')} 
+              variant={T_type === 'real_T' ? 'contained' : 'outlined'}
+            >
+              Real T
+            </Button>
+          </Tooltip>
+          <Tooltip title="Generated Trajectory">
+            <Button 
+              onClick={() => setT_type('ghost_T')} 
+              variant={T_type === 'ghost_T' ? 'contained' : 'outlined'}
+            >
+              Ghost T
+            </Button>
+          </Tooltip>
+        </ButtonGroup>
       </Box>
       <svg width="800" height="450" viewBox="0 0 800 450">
         <BasketballCourt width={800} />
