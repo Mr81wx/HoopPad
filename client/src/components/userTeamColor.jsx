@@ -31,11 +31,10 @@ const colorDict = {
     1610612764: ['#002B5C', 'WAS'],
 };
 
-// Function to get team color and abbreviation
 function getTeamColor(id) {
     const teamInfo = colorDict[id];
     if (!teamInfo) {
-        return null;  // Return null or throw an error if the ID is not found
+        return null;  
     }
     return {
         color: teamInfo[0],

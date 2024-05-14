@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
+
 import "./App.css";
 import {
   AppBar,
@@ -15,8 +14,8 @@ import {
 } from "@mui/material";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import axios from "axios";
-import { BasketballCourt } from "./components/BasketballCourt";
 import { DrawPlayers } from "./components/DrawPlayers";
+
 
 function App() {
   const [count, setCount] = useState(0);
@@ -56,28 +55,26 @@ function App() {
           checkpointFile: selectedCheckpoint,
         },
       });
-  
+
       console.log("All response data:", response.data.agent_IDs);
-  
+
       // Assuming data is correctly formatted and the length of arrays are the same
       const combinedData = response.data.agent_IDs.map((agentId, index) => ({
         agent_id: agentId,
         real_T: response.data.real_T.data[index],
         ghost_T: response.data.ghost_T.data[index],
-        teamID: response.data.player_detail[index][2]  // the third item in each sub-array of player_detail
+        teamID: response.data.player_detail[index][2], // the third item in each sub-array of player_detail
       }));
-  
+
       console.log("Combined data:", combinedData);
-  
+
       // Use this combined data as needed in your application
       // For example, you might want to set this to the state or pass to another component
       setPlayerData(combinedData);
-  
     } catch (error) {
       console.error("Error submitting selections:", error);
     }
   };
-  
 
   const theme = createTheme({
     palette: {
@@ -155,12 +152,14 @@ function App() {
             </div>
           }
           <div className="card">
-            <svg width="800" height="450" viewBox="0 0 800 450">
+           
+          <DrawPlayers width={800} playerData={playerData} />
+            {/* <svg width="800" height="450" viewBox="0 0 800 450">
               <BasketballCourt width={800} />
               {playerData.length > 0 && (
                 <DrawPlayers width={800} playerData={playerData} />
               )}
-            </svg>
+            </svg> */}
           </div>
         </ThemeProvider>
       </div>
