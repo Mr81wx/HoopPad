@@ -9,7 +9,7 @@ import copy
 import numpy as np
 
 class Decoder_MR(nn.Module):
-    def __init__(self, device, time_steps=121, feature_dim=256, head_num=4, k=4, F=6):
+    def __init__(self, device, time_steps=121, feature_dim=256, head_num=4, k=6, F=6):
         super().__init__()
         self.device = device
         self.time_steps = time_steps                # T
@@ -35,8 +35,8 @@ class Decoder_MR(nn.Module):
 
         self.layer_Y = nn.LayerNorm(self.feature_dim)
 
-        self.layer_Z1 = nn.Sequential(nn.Linear(self.feature_dim,4), nn.ReLU(), Permute4Batchnorm((1,3,0,2)),
-                            nn.BatchNorm2d(4),nn.Softplus(), Permute4Batchnorm((2,0,3,1)))  #最后多一个softplus是为了保证输出参数都是>0 
+        self.layer_Z1 = nn.Sequential(nn.Linear(self.feature_dim,self.k), nn.ReLU(), Permute4Batchnorm((1,3,0,2)),
+                            nn.BatchNorm2d(self.k),nn.Softplus(), Permute4Batchnorm((2,0,3,1)))  #最后多一个softplus是为了保证输出参数都是>0 
                             #输出为x,y的laplace分布参数 4个 x.loc,x.scale,y.loc,y.scale
         self.layer_Z1.apply(init_xavier_glorot)
         #self.layer_Z2 = nn.Linear(4 ,2)  # 输出应该是x, y

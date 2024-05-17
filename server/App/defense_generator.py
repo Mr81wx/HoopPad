@@ -22,7 +22,7 @@ def load_model(ckp_path):
     #load Model
     Scene_model = HoopTransformer(3,121,256,4,4,6,50,0.1,32,5e-5,[1])
     base_model = test_model_motion(Scene_model,freeze=True, num_unfreeze = 0) #Encoder freeze
-    decoder_init = Decoder_MR(device = 'cpu',time_steps=121, feature_dim=256, head_num=4, k=4, F=1)
+    decoder_init = Decoder_MR(device = 'cpu',time_steps=121, feature_dim=256, head_num=4, k=6, F=1)
     base_model.decoder = decoder_init
     Test_model = Scene_Motion(model=base_model,lr=1e-3)
     checkpoint = torch.load(ckp_path, map_location=lambda storage, loc: storage)
@@ -42,7 +42,9 @@ states_batch, agents_batch_mask, states_padding_batch, states_hidden_batch,agent
     with torch.no_grad():
         out = model(states_batch, agents_batch_mask, states_padding_batch, states_hidden_batch,agent_ids_batch,team_ids_batch)
         # out [A,T,4] 第0个和第2个是x,y
-    ghost_trajectory = out[:,:,0,::2] #[A,T,F]
+    ghost_trajectory = out[:,:,0,::2] #[A,T,F,3]
+    print(ghost_trajectory.shape)
+    ghost_trajectory = ghost_trajectory[:,:,:2] #[A,T,F,2]
     off_index = torch.where(team_ids_batch != 2)[0]
     ghost_trajectory[off_index] = states_batch[:,:,:2][off_index]
 
@@ -75,13 +77,15 @@ def update_prompt(frame_number,player_number,new_x,new_y,states_batch,states_hid
     states_hidden_batch[palyer_number,frame_number] = False
 
     return states_batch, states_hidden_batch
+
+
 # if __name__ == "__main__":
 #     #possession_path = '/Users/yufu/Documents/Code/HoopPad/server/Data/object_0.pkl'
 #     possession_path = '/workspaces/HoopPad/server/Data/object_0.pkl'
 #     states_batch, agents_batch_mask, states_padding_batch, states_hidden_batch,num_agents_accum,agent_ids_batch,team_ids_batch,team_name_batch,labels_batch = load_possession(possession_path)
     
 #     #ckp_path = '/Users/yufu/Documents/Code/HoopPad/server/Checkpoints/V3_prompt+def_loss.ckpt'
-#     ckp_path = '/workspaces/HoopPad/server/Checkpoints/V3_prompt+def_loss.ckpt'
+#     ckp_path = '/workspaces/HoopPad/server/Checkpoints/BC.ckpt'
 #     model = load_model(ckp_path)
 #     real_T,ghost_T = def_gen(model,states_batch, agents_batch_mask, states_padding_batch, states_hidden_batch,agent_ids_batch,team_ids_batch)
     
