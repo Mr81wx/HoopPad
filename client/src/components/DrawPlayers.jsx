@@ -6,15 +6,36 @@ import { Box, IconButton, Tooltip, Button, ButtonGroup } from "@mui/material";
 import PlayCircleOutlineRoundedIcon from "@mui/icons-material/PlayCircleOutlineRounded";
 import PauseCircleOutlineRoundedIcon from "@mui/icons-material/PauseCircleOutlineRounded";
 import RestartAltRoundedIcon from "@mui/icons-material/RestartAltRounded";
+import useCombineData from "../useCombineData";
+import axios from "axios";
 
-export const DrawPlayers = ({ width, playerData }) => {
+export const DrawPlayers = ({
+  width,
+  playerData,
+  selectedDataFile,
+  selectedCheckpoint,
+}) => {
   const courtSVG = useRef();
   const [currentStep, setCurrentStep] = useState(1);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [T_type, setT_type] = useState('real_T'); // Initial trajectory type
+  const [T_type, setT_type] = useState("ghost_T");
 
-  // Initialize the players on the court
+  const [newPlayerData, setNewPlayerData] = useState([]);
+
+  
+  // const [backList, setBackList] = useState([]);
+
+  let backList = [];
+  const [newList, setNewList] = useState([]);
+
   useEffect(() => {
+    if (playerData.length > 0) {
+      setNewPlayerData(playerData);
+    }
+  }, [playerData]);
+
+  useEffect(() => {
+    console.log(newPlayerData);
     const courtWidth = width;
     const courtHeight = (courtWidth * 50) / 94;
 
@@ -46,8 +67,21 @@ export const DrawPlayers = ({ width, playerData }) => {
         d3.select(this).attr("transform", `translate(${event.x}, ${event.y})`);
       })
       .on("end", function (event, d) {
-        // Update the position in the data
-        const [newX, newY] = [(event.x * 94) / width, (event.y * 94) / width];
+        console.log(d);
+        const newX = (event.x * 94) / width;
+        const newY = (event.y * 94) / width;
+
+        const existingIndex = backList.findIndex(
+          (entry) => entry[0] === currentStep && entry[1] === d.player_index
+        );
+        if (existingIndex >= 0) {
+          backList[existingIndex] = [currentStep, d.player_index, newX, newY];
+        } else {
+          backList = [...backList, [currentStep, d.player_index, newX, newY]];
+        }
+        console.log(backList);
+
+        setNewList(backList)
       });
 
     groups.call(drag);
@@ -139,7 +173,7 @@ export const DrawPlayers = ({ width, playerData }) => {
     }
 
     movePlayersSequentially(currentStep);
-  }, [isPlaying, currentStep, playerData, width, T_type]);
+  }, [isPlaying, currentStep, newPlayerData, width, T_type]);
 
   const handlePlayPause = () => {
     groups.interrupt();
@@ -150,12 +184,61 @@ export const DrawPlayers = ({ width, playerData }) => {
     groups.interrupt();
     setIsPlaying(false);
     setCurrentStep(1);
-    setIsPlaying(true); // Small delay to ensure UI updates
+    setIsPlaying(true);
   };
+
+  console.log("backList", newList);
+
+  const handleRerun = async () => {
+    try {
+      console.log("Back list:", newList);
+      const response = await axios.post(
+        `http://localhost:8080/api/update_data`,
+        {
+          backList: newList,
+        },
+        {
+          params: {
+            dataFile: selectedDataFile,
+            checkpointFile: selectedCheckpoint,
+          },
+        }
+      );
+
+      console.log("Server response:", response.data);
+
+      if (response.data && response.data.error) {
+        console.error("Error from server:", response.data.error);
+        return; 
+      }
+
+      const combinedData = useCombineData(response.data);
+      console.log("Combined data:", combinedData);
+      setNewPlayerData(combinedData); // Ensure setNewPlayerData is defined and used correctly
+    } catch (error) {
+      console.error("Error submitting selections:", error);
+      if (error.response) {
+        console.error("Error details:", error.response.data);
+      }
+    }
+};
+
 
   return (
     <Box>
       <Box sx={{ mt: 2, display: "flex", justifyContent: "center", gap: 1 }}>
+        {newList.length > 0 && (
+          <Tooltip title="Play/Pause">
+            <IconButton onClick={handleRerun} color="primary">
+              {isPlaying ? (
+                <PauseCircleOutlineRoundedIcon />
+              ) : (
+                <PlayCircleOutlineRoundedIcon />
+              )}
+            </IconButton>
+          </Tooltip>
+        )}
+
         <Tooltip title="Play/Pause">
           <IconButton onClick={handlePlayPause} color="primary">
             {isPlaying ? (
@@ -170,19 +253,23 @@ export const DrawPlayers = ({ width, playerData }) => {
             <RestartAltRoundedIcon />
           </IconButton>
         </Tooltip>
-        <ButtonGroup variant="text" color="primary" aria-label="trajectory type">
+        <ButtonGroup
+          variant="text"
+          color="primary"
+          aria-label="trajectory type"
+        >
           <Tooltip title="Real Trajectory">
-            <Button 
-              onClick={() => setT_type('real_T')} 
-              variant={T_type === 'real_T' ? 'contained' : 'outlined'}
+            <Button
+              onClick={() => setT_type("real_T")}
+              variant={T_type === "real_T" ? "contained" : "outlined"}
             >
               Real T
             </Button>
           </Tooltip>
           <Tooltip title="Generated Trajectory">
-            <Button 
-              onClick={() => setT_type('ghost_T')} 
-              variant={T_type === 'ghost_T' ? 'contained' : 'outlined'}
+            <Button
+              onClick={() => setT_type("ghost_T")}
+              variant={T_type === "ghost_T" ? "contained" : "outlined"}
             >
               Ghost T
             </Button>

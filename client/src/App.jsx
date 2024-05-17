@@ -15,6 +15,7 @@ import {
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import axios from "axios";
 import { DrawPlayers } from "./components/DrawPlayers";
+import useCombineData from './useCombineData'
 
 
 function App() {
@@ -58,18 +59,9 @@ function App() {
 
       console.log("All response data:", response.data.agent_IDs);
 
-      // Assuming data is correctly formatted and the length of arrays are the same
-      const combinedData = response.data.agent_IDs.map((agentId, index) => ({
-        agent_id: agentId,
-        real_T: response.data.real_T.data[index],
-        ghost_T: response.data.ghost_T.data[index],
-        teamID: response.data.player_detail[index][2], // the third item in each sub-array of player_detail
-      }));
+      const combinedData = useCombineData(response)
 
       console.log("Combined data:", combinedData);
-
-      // Use this combined data as needed in your application
-      // For example, you might want to set this to the state or pass to another component
       setPlayerData(combinedData);
     } catch (error) {
       console.error("Error submitting selections:", error);
@@ -153,7 +145,12 @@ function App() {
           }
           <div className="card">
            
-          <DrawPlayers width={800} playerData={playerData} />
+          <DrawPlayers 
+          width={800}
+          playerData={playerData}
+          selectedDataFile = {selectedDataFile}
+          selectedCheckpoint = {selectedCheckpoint}
+           />
             {/* <svg width="800" height="450" viewBox="0 0 800 450">
               <BasketballCourt width={800} />
               {playerData.length > 0 && (

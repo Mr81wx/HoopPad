@@ -65,6 +65,38 @@ def get_data():
     except Exception as e:
         logging.error(f"Failed to process tensor data: {str(e)}")
         return jsonify({"error": "Failed to process tensor data"}), 500
+    
+    
+@app.route("/api/update_data", methods=['POST'])
+def update_data():
+    print("request", request.args, request.json)
+    data_file = request.args.get("dataFile")
+    checkpoint_file = request.args.get("checkpointFile")
+    back_list = request.json.get("backList", []) 
+    
+    print(back_list) 
+
+    if not data_file or not checkpoint_file or not back_list:
+        logging.error("Required parameters are missing.")
+        return jsonify({"error": "Missing required parameters"}), 400
+
+    possession_path = os.path.join(DATA_DIR, data_file)
+    ckp_path = os.path.join(CHECKPOINTS_DIR, checkpoint_file)
+
+    try:
+        results = update_results(back_list, possession_path, ckp_path)
+        serialized_results = {
+            "ghost_T": serialize_tensor(results["ghost_T"].clone().detach()),
+            "real_T": serialize_tensor(results["real_T"].clone().detach()),
+            "team_IDs": results["team_IDs"].tolist(),
+            "agent_IDs": results["agent_IDs"].tolist(),
+            "player_detail": results["player_detail"].tolist()
+        }
+
+        return jsonify(serialized_results)
+    except Exception as e:
+        logging.error(f"Failed to process tensor data: {str(e)}")
+        return jsonify({"error": "Failed to process tensor data"}), 500
 
 
 
