@@ -26,7 +26,7 @@ def load_model(ckp_path):
     base_model.decoder = decoder_init
     Test_model = Scene_Motion(model=base_model,lr=1e-3)
     checkpoint = torch.load(ckp_path, map_location=lambda storage, loc: storage)
-    Test_model.load_state_dict(checkpoint['state_dict'])
+    Test_model.load_state_dict(checkpoint['state_dict'],strict=False)
 
     return Test_model
 
