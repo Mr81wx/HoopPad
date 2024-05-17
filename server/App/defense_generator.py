@@ -92,10 +92,6 @@ def update_results(back_list,possession_path, ckp_path):
     
     states_batch, agents_batch_mask, states_padding_batch, states_hidden_batch,num_agents_accum,agent_ids_batch,team_ids_batch,team_name_batch,labels_batch = load_possession(possession_path)
     model = load_model(ckp_path)
-    
-    team_ids_batch = team_ids_batch.numpy().astype(int)
-    agent_ids_batch = agent_ids_batch.numpy().astype(int)
-    players_detail = np.stack((team_ids_batch.astype(int), agent_ids_batch.astype(int), team_name_batch.astype(int)), axis=1)
 
     # print(players_detail)
 
@@ -112,8 +108,13 @@ def update_results(back_list,possession_path, ckp_path):
     states_batch[player_number,frame_number,1] = new_y
     #update hidden mask, make this position visible to model
     states_hidden_batch[player_number,frame_number] = False
+
     
     real_T,ghost_T = def_gen(model,states_batch, agents_batch_mask, states_padding_batch, states_hidden_batch,agent_ids_batch,team_ids_batch)
+
+    team_ids_batch = team_ids_batch.numpy().astype(int)
+    agent_ids_batch = agent_ids_batch.numpy().astype(int)
+    players_detail = np.stack((team_ids_batch.astype(int), agent_ids_batch.astype(int), team_name_batch.astype(int)), axis=1)
 
     return {"real_T": real_T, "ghost_T": ghost_T, "team_IDs": team_ids_batch, "agent_IDs":agent_ids_batch, "player_detail": players_detail}
 
