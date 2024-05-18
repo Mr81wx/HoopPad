@@ -105,6 +105,4 @@ def serialize_tensor(tensor):
 
 
 if __name__ == "__main__":
-    with app.app_context():
-        print(select_data())
     app.run(debug=True, port=8080)

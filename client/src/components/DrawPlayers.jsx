@@ -6,6 +6,7 @@ import { Box, IconButton, Tooltip, Button, ButtonGroup } from "@mui/material";
 import PlayCircleOutlineRoundedIcon from "@mui/icons-material/PlayCircleOutlineRounded";
 import PauseCircleOutlineRoundedIcon from "@mui/icons-material/PauseCircleOutlineRounded";
 import RestartAltRoundedIcon from "@mui/icons-material/RestartAltRounded";
+import EventRepeatOutlinedIcon from '@mui/icons-material/EventRepeatOutlined';
 import useCombineData from "../useCombineData";
 import axios from "axios";
 
@@ -48,7 +49,7 @@ export const DrawPlayers = ({
 
     const groups = courtItem
       .selectAll("g")
-      .data(playerData)
+      .data(playerData, d=> d.agent_id)
       .join("g")
       .attr(
         "transform",
@@ -143,6 +144,11 @@ export const DrawPlayers = ({
   useEffect(() => {
     if (!isPlaying) return;
 
+    console.log('newData')
+
+    groups.data(newPlayerData, d => d.agent_id)
+
+
     async function movePlayersSequentially(startStep) {
       let index = startStep;
       while (index < 50 && isPlaying) {
@@ -212,7 +218,7 @@ export const DrawPlayers = ({
         return; 
       }
 
-      const combinedData = useCombineData(response.data);
+      const combinedData = useCombineData(response);
       console.log("Combined data:", combinedData);
       setNewPlayerData(combinedData); // Ensure setNewPlayerData is defined and used correctly
     } catch (error) {
@@ -228,13 +234,9 @@ export const DrawPlayers = ({
     <Box>
       <Box sx={{ mt: 2, display: "flex", justifyContent: "center", gap: 1 }}>
         {newList.length > 0 && (
-          <Tooltip title="Play/Pause">
-            <IconButton onClick={handleRerun} color="primary">
-              {isPlaying ? (
-                <PauseCircleOutlineRoundedIcon />
-              ) : (
-                <PlayCircleOutlineRoundedIcon />
-              )}
+          <Tooltip title="Re-calculate Ghost_T">
+            <IconButton onClick={handleRerun} color="primary">       
+                <EventRepeatOutlinedIcon />            
             </IconButton>
           </Tooltip>
         )}
