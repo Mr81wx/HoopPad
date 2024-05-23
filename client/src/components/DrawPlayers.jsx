@@ -6,7 +6,7 @@ import { Box, IconButton, Tooltip, Button, ButtonGroup } from "@mui/material";
 import PlayCircleOutlineRoundedIcon from "@mui/icons-material/PlayCircleOutlineRounded";
 import PauseCircleOutlineRoundedIcon from "@mui/icons-material/PauseCircleOutlineRounded";
 import RestartAltRoundedIcon from "@mui/icons-material/RestartAltRounded";
-import EventRepeatOutlinedIcon from '@mui/icons-material/EventRepeatOutlined';
+import EventRepeatOutlinedIcon from "@mui/icons-material/EventRepeatOutlined";
 import useCombineData from "../useCombineData";
 import axios from "axios";
 
@@ -23,7 +23,6 @@ export const DrawPlayers = ({
 
   const [newPlayerData, setNewPlayerData] = useState([]);
 
-  
   // const [backList, setBackList] = useState([]);
 
   let backList = [];
@@ -32,11 +31,12 @@ export const DrawPlayers = ({
   useEffect(() => {
     if (playerData.length > 0) {
       setNewPlayerData(playerData);
+      setCurrentStep(1)
     }
   }, [playerData]);
 
   useEffect(() => {
-    console.log(newPlayerData);
+    console.log(playerData);
     const courtWidth = width;
     const courtHeight = (courtWidth * 50) / 94;
 
@@ -49,7 +49,7 @@ export const DrawPlayers = ({
 
     const groups = courtItem
       .selectAll("g")
-      .data(playerData, d=> d.agent_id)
+      .data(playerData, (d) => d.agent_id)
       .join("g")
       .attr(
         "transform",
@@ -68,7 +68,6 @@ export const DrawPlayers = ({
         d3.select(this).attr("transform", `translate(${event.x}, ${event.y})`);
       })
       .on("end", function (event, d) {
-        console.log(d);
         const newX = (event.x * 94) / width;
         const newY = (event.y * 94) / width;
 
@@ -78,11 +77,12 @@ export const DrawPlayers = ({
         if (existingIndex >= 0) {
           backList[existingIndex] = [currentStep, d.player_index, newX, newY];
         } else {
-          backList = [...backList, [currentStep, d.player_index, newX, newY]];
+          backList.push([currentStep, d.player_index, newX, newY]);
         }
-        console.log(backList);
 
-        setNewList(backList)
+        console.log("backList:", backList);
+
+        setNewList([...backList]);
       });
 
     groups.call(drag);
@@ -144,45 +144,59 @@ export const DrawPlayers = ({
   useEffect(() => {
     if (!isPlaying) return;
 
-    console.log('newData')
+    console.log("newData");
 
-    groups.data(newPlayerData, d => d.agent_id)
-
+    groups.data(newPlayerData, (d) => d.agent_id);
 
     async function movePlayersSequentially(startStep) {
       let index = startStep;
-      while (index < 50 && isPlaying) {
+      while (isPlaying) {
+        if (
+          newPlayerData.length === 0 ||
+          !newPlayerData[0][T_type] ||
+          index >= newPlayerData[0][T_type].length
+        ) {
+          setIsPlaying(false);
+          break;
+        }
+
         await new Promise((resolve) => {
           groups
             .transition()
             .duration(200)
             .ease(d3.easeLinear)
-            .attr(
-              "transform",
-              (d) =>
-                `translate(${(d[T_type][index][0] * width) / 94}, ${
+            .attr("transform", (d) => {
+              // console.log(d)
+              if (index < d[T_type].length) {
+                return `translate(${(d[T_type][index][0] * width) / 94}, ${
                   (d[T_type][index][1] * width) / 94
-                })`
-            )
-            .end()
-            .then(resolve);
+                })`;
+              }
+              return `translate(${(d[T_type][0][0] * width) / 94}, ${
+                (d[T_type][0][1] * width) / 94
+              })`;
+            })
+            .on("end", resolve);
         });
-        index++;
 
+        index++;
         setCurrentStep(index);
 
-        if (currentStep === 49) {
+
+            if (index === newPlayerData[0][T_type].length) {
           setIsPlaying(false);
           setCurrentStep(1);
+          break;
         }
       }
     }
 
     movePlayersSequentially(currentStep);
-  }, [isPlaying, currentStep, newPlayerData, width, T_type]);
+  }, [isPlaying, currentStep, newPlayerData, T_type,playerData]);
 
   const handlePlayPause = () => {
     groups.interrupt();
+    console.log(currentStep);
     setIsPlaying(!isPlaying);
   };
 
@@ -192,8 +206,6 @@ export const DrawPlayers = ({
     setCurrentStep(1);
     setIsPlaying(true);
   };
-
-  console.log("backList", newList);
 
   const handleRerun = async () => {
     try {
@@ -215,28 +227,27 @@ export const DrawPlayers = ({
 
       if (response.data && response.data.error) {
         console.error("Error from server:", response.data.error);
-        return; 
+        return;
       }
 
-      const combinedData = useCombineData(response);
+      const combinedData = useCombineData(response, 'new');
       console.log("Combined data:", combinedData);
-      setNewPlayerData(combinedData); // Ensure setNewPlayerData is defined and used correctly
+      setNewPlayerData(combinedData);
     } catch (error) {
       console.error("Error submitting selections:", error);
       if (error.response) {
         console.error("Error details:", error.response.data);
       }
     }
-};
-
+  };
 
   return (
     <Box>
       <Box sx={{ mt: 2, display: "flex", justifyContent: "center", gap: 1 }}>
         {newList.length > 0 && (
           <Tooltip title="Re-calculate Ghost_T">
-            <IconButton onClick={handleRerun} color="primary">       
-                <EventRepeatOutlinedIcon />            
+            <IconButton onClick={handleRerun} color="primary">
+              <EventRepeatOutlinedIcon />
             </IconButton>
           </Tooltip>
         )}
