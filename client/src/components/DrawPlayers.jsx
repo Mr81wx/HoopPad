@@ -59,33 +59,7 @@ export const DrawPlayers = ({
           })`
       );
 
-    const drag = d3
-      .drag()
-      .on("start", function (event, d) {
-        d3.select(this).raise();
-      })
-      .on("drag", function (event, d) {
-        d3.select(this).attr("transform", `translate(${event.x}, ${event.y})`);
-      })
-      .on("end", function (event, d) {
-        const newX = (event.x * 94) / width;
-        const newY = (event.y * 94) / width;
-
-        const existingIndex = backList.findIndex(
-          (entry) => entry[0] === currentStep && entry[1] === d.player_index
-        );
-        if (existingIndex >= 0) {
-          backList[existingIndex] = [currentStep, d.player_index, newX, newY];
-        } else {
-          backList.push([currentStep, d.player_index, newX, newY]);
-        }
-
-        console.log("backList:", backList);
-
-        setNewList([...backList]);
-      });
-
-    groups.call(drag);
+   
 
     groups.each(function (d, i) {
       const group = d3.select(this);
@@ -148,6 +122,34 @@ export const DrawPlayers = ({
 
     groups.data(newPlayerData, (d) => d.agent_id);
 
+    const drag = d3
+    .drag()
+    .on("start", function (event, d) {
+      d3.select(this).raise();
+    })
+    .on("drag", function (event, d) {
+      d3.select(this).attr("transform", `translate(${event.x}, ${event.y})`);
+    })
+    .on("end", function (event, d) {
+      const newX = (event.x * 94) / width;
+      const newY = (event.y * 94) / width;
+
+      const existingIndex = backList.findIndex(
+        (entry) => entry[0] === currentStep && entry[1] === d.player_index
+      );
+      if (existingIndex >= 0) {
+        backList[existingIndex] = [currentStep, d.player_index, newX, newY];
+      } else {
+        backList.push([currentStep, d.player_index, newX, newY]);
+      }
+
+      console.log("backList:", backList);
+
+      setNewList([...backList]);
+    });
+
+  groups.call(drag);
+
     async function movePlayersSequentially(startStep) {
       let index = startStep;
       while (isPlaying) {
@@ -166,7 +168,7 @@ export const DrawPlayers = ({
             .duration(200)
             .ease(d3.easeLinear)
             .attr("transform", (d) => {
-              // console.log(d)
+              console.log(d)
               if (index < d[T_type].length) {
                 return `translate(${(d[T_type][index][0] * width) / 94}, ${
                   (d[T_type][index][1] * width) / 94
