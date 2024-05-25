@@ -47,8 +47,14 @@ states_batch, agents_batch_mask, states_padding_batch, states_hidden_batch,agent
     ghost_trajectory = ghost_trajectory[:,:,:2] #[A,T,F,2]
     off_index = torch.where(team_ids_batch != 2)[0]
     ghost_trajectory[off_index] = states_batch[:,:,:2][off_index]
+    
+    #get last frame index of possession
+    padding = states_padding_batch[0,:]
+    #print(padding)
+    zero_indices = torch.nonzero(padding == 0, as_tuple=False)
+    last_zero_index = zero_indices[-1].item() if zero_indices.numel() > 0 else None
 
-    return states_batch, ghost_trajectory
+    return states_batch[:,0:last_zero_index+1,:], ghost_trajectory[:,0:last_zero_index+1,:]
 
 
 
@@ -102,12 +108,12 @@ def update_results(back_list,possession_path, ckp_path):
         new_x = sub_list[2]
         new_y = sub_list[3]
     
-    print("state_batch",states_batch)
+    #print("state_batch",states_batch)
     
-    states_batch[player_number,frame_number,0] = new_x
-    states_batch[player_number,frame_number,1] = new_y
+    states_batch[player_number,frame_number-1:frame_number+2,0] = new_x
+    states_batch[player_number,frame_number-1:frame_number+2,1] = new_y
     #update hidden mask, make this position visible to model
-    states_hidden_batch[player_number,frame_number] = False
+    states_hidden_batch[player_number,frame_number-1:frame_number+2] = False
 
     
     real_T,ghost_T = def_gen(model,states_batch, agents_batch_mask, states_padding_batch, states_hidden_batch,agent_ids_batch,team_ids_batch)
