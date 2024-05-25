@@ -168,7 +168,6 @@ export const DrawPlayers = ({
             .duration(200)
             .ease(d3.easeLinear)
             .attr("transform", (d) => {
-              console.log(d)
               if (index < d[T_type].length) {
                 return `translate(${(d[T_type][index][0] * width) / 94}, ${
                   (d[T_type][index][1] * width) / 94
