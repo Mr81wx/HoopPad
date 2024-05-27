@@ -9,6 +9,7 @@ from Model.module_all import HoopTransformer
 from Model.motion_module import *
 from Model.decoder import *
 from Model.possession import *
+from Model.qsq import *
 
 def load_possession(possession_path):
     with open(possession_path, 'rb') as f:
@@ -123,6 +124,24 @@ def update_results(back_list,possession_path, ckp_path):
     players_detail = np.stack((team_ids_batch.astype(int), agent_ids_batch.astype(int), team_name_batch.astype(int)), axis=1)
 
     return {"real_T": real_T, "ghost_T": ghost_T, "team_IDs": team_ids_batch, "agent_IDs":agent_ids_batch, "player_detail": players_detail}
+
+def get_qsq(states_batch,T,team_ids_batch,padding_batch):
+
+    #load Qsq model
+    NET = Net(dim_in = 5,dim_h = 128,dim_out=1)
+    Qsq_model = Qsq(model=NET,lr=5e-5)
+    state_dict = torch.load("server/App/qsq.ckpt")
+    Qsq_model.load_state_dict(state_dict['state_dict'])
+
+    Qsq_value = torch.vmap(cal_Qsq_batch_,in_dims=(1,1,None,None))(states_batch,T[:,:,:2],team_ids_batch,Qsq_model)
+    Qsq_value = Qsq_value.permute(2, 0, 1).reshape(5, 121)
+    #get last frame index of possession
+    padding = padding_batch[0,:]
+    #print(padding)
+    zero_indices = torch.nonzero(padding == 0, as_tuple=False)
+    last_zero_index = zero_indices[-1].item() if zero_indices.numel() > 0 else None
+
+    return Qsq_value[:,:last_zero_index+1] #[5,T] offense player 
 
 
 # if __name__ == "__main__":
