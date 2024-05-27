@@ -49,13 +49,7 @@ states_batch, agents_batch_mask, states_padding_batch, states_hidden_batch,agent
     off_index = torch.where(team_ids_batch != 2)[0]
     ghost_trajectory[off_index] = states_batch[:,:,:2][off_index]
     
-    #get last frame index of possession
-    padding = states_padding_batch[0,:]
-    #print(padding)
-    zero_indices = torch.nonzero(padding == 0, as_tuple=False)
-    last_zero_index = zero_indices[-1].item() if zero_indices.numel() > 0 else None
-
-    return states_batch[:,0:last_zero_index+1,:], ghost_trajectory[:,0:last_zero_index+1,:]
+    return states_batch, ghost_trajectory
 
 
 
@@ -66,13 +60,36 @@ def get_results(possession_path, ckp_path):
     model = load_model(ckp_path)
     real_T,ghost_T = def_gen(model,states_batch, agents_batch_mask, states_padding_batch, states_hidden_batch,agent_ids_batch,team_ids_batch)
     
+    #load Qsq model
+    NET = Net(dim_in = 5,dim_h = 128,dim_out=1)
+    Qsq_model = Qsq(model=NET,lr=5e-5)
+    state_dict = torch.load("./App/qsq.ckpt")
+    Qsq_model.load_state_dict(state_dict['state_dict'])
+
+    qsq_real = get_qsq(states_batch,real_T,team_ids_batch,Qsq_model)
+    qsq_ghost = get_qsq(states_batch,ghost_T,team_ids_batch,Qsq_model)
+    
+    #get last frame index of possession
+    padding = states_padding_batch[0,:]
+    #print(padding)
+    zero_indices = torch.nonzero(padding == 0, as_tuple=False)
+    last_zero_index = zero_indices[-1].item() if zero_indices.numel() > 0 else None
+    
+    real_T = real_T[:,0:last_zero_index+1,:]
+    ghost_T = ghost_T[:,0:last_zero_index+1,:]
+    qsq_real = qsq_real[:,0:last_zero_index+1]
+    qsq_ghost = qsq_ghost[:,0:last_zero_index+1]
+
     team_ids_batch = team_ids_batch.numpy().astype(int)
     agent_ids_batch = agent_ids_batch.numpy().astype(int)
     players_detail = np.stack((team_ids_batch.astype(int), agent_ids_batch.astype(int), team_name_batch.astype(int)), axis=1)
 
     print(players_detail)
+    print('qsq',qsq_ghost)
 
-    return {"real_T": real_T, "ghost_T": ghost_T, "team_IDs": team_ids_batch, "agent_IDs":agent_ids_batch, "player_detail": players_detail}
+    return {"real_T": real_T, "ghost_T": ghost_T, 
+            "real_QSQ": qsq_real,"ghost_QSQ":qsq_ghost,
+            "team_IDs": team_ids_batch, "agent_IDs":agent_ids_batch, "player_detail": players_detail}
 
 
 # def update_prompt(back_list,states_batch,states_hidden_batch): 
@@ -119,29 +136,45 @@ def update_results(back_list,possession_path, ckp_path):
     
     real_T,ghost_T = def_gen(model,states_batch, agents_batch_mask, states_padding_batch, states_hidden_batch,agent_ids_batch,team_ids_batch)
 
+    #load Qsq model
+    NET = Net(dim_in = 5,dim_h = 128,dim_out=1)
+    Qsq_model = Qsq(model=NET,lr=5e-5)
+
+    state_dict = torch.load("./App/qsq.ckpt")
+
+    Qsq_model.load_state_dict(state_dict['state_dict'])
+
+    qsq_real = get_qsq(states_batch,real_T,team_ids_batch,Qsq_model)
+    qsq_ghost = get_qsq(states_batch,ghost_T,team_ids_batch,Qsq_model)
+    
+    #get last frame index of possession
+    padding = states_padding_batch[0,:]
+    #print(padding)
+    zero_indices = torch.nonzero(padding == 0, as_tuple=False)
+    last_zero_index = zero_indices[-1].item() if zero_indices.numel() > 0 else None
+    
+    real_T = real_T[:,0:last_zero_index+1,:]
+    ghost_T = ghost_T[:,0:last_zero_index+1,:]
+    qsq_real = qsq_real[:,0:last_zero_index+1]
+    qsq_ghost = qsq_ghost[:,0:last_zero_index+1]
+
+
     team_ids_batch = team_ids_batch.numpy().astype(int)
     agent_ids_batch = agent_ids_batch.numpy().astype(int)
     players_detail = np.stack((team_ids_batch.astype(int), agent_ids_batch.astype(int), team_name_batch.astype(int)), axis=1)
 
-    return {"real_T": real_T, "ghost_T": ghost_T, "team_IDs": team_ids_batch, "agent_IDs":agent_ids_batch, "player_detail": players_detail}
+    return {"real_T": real_T, "ghost_T": ghost_T, 
+            "real_QSQ": qsq_real,"ghost_QSQ":qsq_ghost, 
+            "team_IDs": team_ids_batch, "agent_IDs":agent_ids_batch, "player_detail": players_detail}
 
-def get_qsq(states_batch,T,team_ids_batch,padding_batch):
 
-    #load Qsq model
-    NET = Net(dim_in = 5,dim_h = 128,dim_out=1)
-    Qsq_model = Qsq(model=NET,lr=5e-5)
-    state_dict = torch.load("server/App/qsq.ckpt")
-    Qsq_model.load_state_dict(state_dict['state_dict'])
+
+def get_qsq(states_batch,T,team_ids_batch,Qsq_model):
 
     Qsq_value = torch.vmap(cal_Qsq_batch_,in_dims=(1,1,None,None))(states_batch,T[:,:,:2],team_ids_batch,Qsq_model)
     Qsq_value = Qsq_value.permute(2, 0, 1).reshape(5, 121)
-    #get last frame index of possession
-    padding = padding_batch[0,:]
-    #print(padding)
-    zero_indices = torch.nonzero(padding == 0, as_tuple=False)
-    last_zero_index = zero_indices[-1].item() if zero_indices.numel() > 0 else None
-
-    return Qsq_value[:,:last_zero_index+1] #[5,T] offense player 
+   
+    return Qsq_value #[5,T] offense player 
 
 
 # if __name__ == "__main__":
