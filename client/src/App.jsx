@@ -57,7 +57,7 @@ function App() {
         },
       });
 
-      console.log("All response data:", response.data.agent_IDs);
+      console.log("All response data:", response.data);
 
       const combinedData = useCombineData(response)
 

@@ -7,7 +7,7 @@ import numpy as np
 from numpyencoder import NumpyEncoder
 import logging
 
-sys.path.append("../server") 
+sys.path.append("../server")
 
 
 DATA_DIR = "Data"
@@ -56,25 +56,25 @@ def get_data():
             "real_T": serialize_tensor(results["real_T"].clone().detach()),
             "team_IDs": results["team_IDs"].tolist(),
             "agent_IDs": results["agent_IDs"].tolist(),
-            "player_detail": results["player_detail"].tolist()
+            "player_detail": results["player_detail"].tolist(),
+            "real_QSQ": results["real_QSQ"].tolist(),
+            "ghost_QSQ": results["ghost_QSQ"].tolist(),
         }
-        
-        
 
         return jsonify(serialized_results)
     except Exception as e:
         logging.error(f"Failed to process tensor data: {str(e)}")
         return jsonify({"error": "Failed to process tensor data"}), 500
-    
-    
-@app.route("/api/update_data", methods=['POST'])
+
+
+@app.route("/api/update_data", methods=["POST"])
 def update_data():
     print("request", request.args, request.json)
     data_file = request.args.get("dataFile")
     checkpoint_file = request.args.get("checkpointFile")
-    back_list = request.json.get("backList", []) 
-    
-    print(back_list) 
+    back_list = request.json.get("backList", [])
+
+    print(back_list)
 
     if not data_file or not checkpoint_file or not back_list:
         logging.error("Required parameters are missing.")
@@ -90,14 +90,15 @@ def update_data():
             "real_T": serialize_tensor(results["real_T"].clone().detach()),
             "team_IDs": results["team_IDs"].tolist(),
             "agent_IDs": results["agent_IDs"].tolist(),
-            "player_detail": results["player_detail"].tolist()
+            "player_detail": results["player_detail"].tolist(),
+            "real_QSQ": results["real_QSQ"].tolist(),
+            "ghost_QSQ": results["ghost_QSQ"].tolist(),
         }
 
         return jsonify(serialized_results)
     except Exception as e:
         logging.error(f"Failed to process tensor data: {str(e)}")
         return jsonify({"error": "Failed to process tensor data"}), 500
-
 
 
 def serialize_tensor(tensor):

@@ -9,6 +9,7 @@ import RestartAltRoundedIcon from "@mui/icons-material/RestartAltRounded";
 import EventRepeatOutlinedIcon from "@mui/icons-material/EventRepeatOutlined";
 import useCombineData from "../useCombineData";
 import axios from "axios";
+import color from "./color";
 
 export const DrawPlayers = ({
   width,
@@ -31,7 +32,7 @@ export const DrawPlayers = ({
   useEffect(() => {
     if (playerData.length > 0) {
       setNewPlayerData(playerData);
-      setCurrentStep(1)
+      setCurrentStep(1);
     }
   }, [playerData]);
 
@@ -59,12 +60,10 @@ export const DrawPlayers = ({
           })`
       );
 
-   
-
     groups.each(function (d, i) {
       const group = d3.select(this);
 
-      const radius = i === 0 ? 15 : 25;
+      const radius = i === 0 ? 10 : 25;
 
       const clipPathId = `clip-path-${i}`;
       if (d.agent_id !== -1) {
@@ -75,6 +74,8 @@ export const DrawPlayers = ({
           .attr("r", radius)
           .attr("cx", 0)
           .attr("cy", 0);
+      } else {
+        group.raise();
       }
 
       console.log(getTeamColor(d.teamID)?.color);
@@ -83,8 +84,21 @@ export const DrawPlayers = ({
         .attr("r", radius)
         .style("fill", i === 0 ? "orange" : getTeamColor(d.teamID).color)
         .style("stroke-width", 3)
-        .style("stroke", i === 0 ? "orange" : i > 5 ? "red" : "blue")
+        .style("stroke", i === 0 ? "orange" : getTeamColor(d.teamID).color)
         .style("opacity", 0.8);
+
+      if (i > 0 && i < 6) {
+        group
+          .append("circle")
+          .datum(d)
+          .attr("class", "qualityCircle")
+          .attr("r", radius + 4)
+          .style("fill", "none")
+          .style("stroke-width", 5);
+      }
+
+      // .style("stroke", i === 0 ? "orange" : i > 5 ? "red" : "blue")
+      // .style("opacity", 0.8);
 
       const image = group
         .append("image")
@@ -123,32 +137,32 @@ export const DrawPlayers = ({
     groups.data(newPlayerData, (d) => d.agent_id);
 
     const drag = d3
-    .drag()
-    .on("start", function (event, d) {
-      d3.select(this).raise();
-    })
-    .on("drag", function (event, d) {
-      d3.select(this).attr("transform", `translate(${event.x}, ${event.y})`);
-    })
-    .on("end", function (event, d) {
-      const newX = (event.x * 94) / width;
-      const newY = (event.y * 94) / width;
+      .drag()
+      .on("start", function (event, d) {
+        d3.select(this).raise();
+      })
+      .on("drag", function (event, d) {
+        d3.select(this).attr("transform", `translate(${event.x}, ${event.y})`);
+      })
+      .on("end", function (event, d) {
+        const newX = (event.x * 94) / width;
+        const newY = (event.y * 94) / width;
 
-      const existingIndex = backList.findIndex(
-        (entry) => entry[0] === currentStep && entry[1] === d.player_index
-      );
-      if (existingIndex >= 0) {
-        backList[existingIndex] = [currentStep, d.player_index, newX, newY];
-      } else {
-        backList.push([currentStep, d.player_index, newX, newY]);
-      }
+        const existingIndex = backList.findIndex(
+          (entry) => entry[0] === currentStep && entry[1] === d.player_index
+        );
+        if (existingIndex >= 0) {
+          backList[existingIndex] = [currentStep, d.player_index, newX, newY];
+        } else {
+          backList.push([currentStep, d.player_index, newX, newY]);
+        }
 
-      console.log("backList:", backList);
+        console.log("backList:", backList);
 
-      setNewList([...backList]);
-    });
+        setNewList([...backList]);
+      });
 
-  groups.call(drag);
+    groups.call(drag);
 
     async function movePlayersSequentially(startStep) {
       let index = startStep;
@@ -178,13 +192,14 @@ export const DrawPlayers = ({
               })`;
             })
             .on("end", resolve);
+
+          d3.selectAll(".qualityCircle").style("fill", (d) => color(d[T_type==="ghost_T"?"ghost_qsq":"real_qsq"][index]));
         });
 
         index++;
         setCurrentStep(index);
 
-
-            if (index === newPlayerData[0][T_type].length) {
+        if (index === newPlayerData[0][T_type].length) {
           setIsPlaying(false);
           setCurrentStep(1);
           break;
@@ -193,7 +208,7 @@ export const DrawPlayers = ({
     }
 
     movePlayersSequentially(currentStep);
-  }, [isPlaying, currentStep, newPlayerData, T_type,playerData]);
+  }, [isPlaying, currentStep, newPlayerData, T_type, playerData]);
 
   const handlePlayPause = () => {
     groups.interrupt();
@@ -231,7 +246,7 @@ export const DrawPlayers = ({
         return;
       }
 
-      const combinedData = useCombineData(response, 'new');
+      const combinedData = useCombineData(response, "new");
       console.log("Combined data:", combinedData);
       setNewPlayerData(combinedData);
     } catch (error) {
