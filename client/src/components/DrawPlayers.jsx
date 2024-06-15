@@ -74,28 +74,45 @@ export const DrawPlayers = ({
           .attr("r", radius)
           .attr("cx", 0)
           .attr("cy", 0);
+
+
+        if (i<6) {
+          group.raise()
+        }
       } else {
         group.raise();
       }
 
+
       console.log(getTeamColor(d.teamID)?.color);
       group
         .append("circle")
+        .attr("class", i > 0 && i < 6 ? "off_circle" : "def_circle")
         .attr("r", radius)
         .style("fill", i === 0 ? "orange" : getTeamColor(d.teamID).color)
         .style("stroke-width", 3)
         .style("stroke", i === 0 ? "orange" : getTeamColor(d.teamID).color)
-        .style("opacity", 0.8);
+        .style("opacity", 0.9);
 
-      if (i > 0 && i < 6) {
-        group
-          .append("circle")
-          .datum(d)
-          .attr("class", "qualityCircle")
-          .attr("r", radius + 4)
-          .style("fill", "none")
-          .style("stroke-width", 5);
-      }
+      group
+        .append("text")
+        .attr("class", i > 0 && i < 6 ? "off_text" : "")
+        .attr("x", 0)
+        .attr("y", 30)
+        .style("font-size", 15)
+        .style("text-anchor", "middle")
+        .style("fill", "white")
+        .raise();
+
+      // if (i > 0 && i < 6) {
+      //   group
+      //     .append("circle")
+      //     .datum(d)
+      //     .attr("class", "qualityCircle")
+      //     .attr("r", radius + 4)
+      //     .style("fill", "none")
+      //     .style("stroke-width", 5);
+      // }
 
       // .style("stroke", i === 0 ? "orange" : i > 5 ? "red" : "blue")
       // .style("opacity", 0.8);
@@ -193,7 +210,16 @@ export const DrawPlayers = ({
             })
             .on("end", resolve);
 
-          d3.selectAll(".qualityCircle").style("fill", (d) => color(d[T_type==="ghost_T"?"ghost_qsq":"real_qsq"][index]));
+          d3.selectAll(".off_circle").style("fill", (d) =>
+            color(d[T_type === "ghost_T" ? "ghost_qsq" : "real_qsq"][index])
+          );
+
+          d3.selectAll(".off_text")
+          .text(d => {
+            const property = T_type === "ghost_T" ? "ghost_qsq" : "real_qsq";
+            return parseFloat(d[property][index].toFixed(2));
+          })
+          .raise();
         });
 
         index++;
