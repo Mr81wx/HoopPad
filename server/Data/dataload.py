@@ -79,10 +79,16 @@ def create_def(batch): #load possession from each data.pkl
             agent_ids = np.pad(agent_ids, (11 - A, 0), 'constant', constant_values=(-1,))
             team_ids = np.pad(team_ids, (11 - A, 0), 'constant', constant_values=(-1,))
             team_name = np.pad(team_name, (11 - A, 0), 'constant', constant_values=(-2,))
-
-
+    
 
         possession_tensor = torch.transpose(possession_tensor , dim0=1, dim1=2) #shape[A,T,D]
+
+        #将进攻方的index设置为1-5
+        sorted_index = np.argsort(team_ids)
+        possession_tensor = possession_tensor[sorted_index,:,:]
+        team_name = team_name[sorted_index]
+        team_ids = team_ids[sorted_index]
+        agent_ids = agent_ids[sorted_index]
 
         time_24s = possession.time_24s[::sample_freq] #间隔sample_freq个取值
         if sequence_length < 30:
@@ -123,6 +129,8 @@ def create_def(batch): #load possession from each data.pkl
     agent_ids_batch = torch.FloatTensor(agent_ids_batch)
     team_ids_batch = torch.FloatTensor(team_ids_batch) 
     labels_batch = torch.FloatTensor(team_ids_batch) #后面可能会用
+
+    
 
 
     return (states_batch, agents_batch_mask, states_padding_batch, states_hidden_batch,num_agents_accum,agent_ids_batch,team_ids_batch,team_name_batch,labels_batch)
